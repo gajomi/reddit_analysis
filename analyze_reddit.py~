@@ -1,0 +1,49 @@
+from itertools import islice
+from operator import itemgetter
+import praw
+import time
+from pprint import pprint as pretty
+
+#our bot
+user_agent = "Weitz Reddit Analysis Team of Excellence (WRATE) v0.0.1"
+r = praw.Reddit(user_agent=user_agent)
+
+#a submission about fish eating pigeons
+pigeon_fish_submission = r.get_submission(submission_id = "14dkff")
+authors = authors_by_submission(pigeon_fish_submission)
+
+#lets focus in on the author with the most "comment karma"
+author = argmax_f(authors,lambda a: a.comment_karma)
+comments = comments_by_author(author)
+
+
+
+
+def comments_by_submission(s):
+    """Returns flat list of all comments in a submission"""
+    return s.all_comments
+
+def authors_by_submission(s):
+    """Return a flat list of all authors in a submission"""
+    return {comment.author for comment in s.all_comments if comment.author is not None}
+
+def comments_by_author(author,limit = 256):
+    """Returns a flat list of all the comments made by a specified author"""
+    #reddit api automatically chunks things into 25 calls with 2 second delay
+    iter_comments = author.get_comments(limit = limit)
+    return take(limit,iter_comments)
+
+#utils below, to be factored out
+
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(islice(iterable, n))
+    
+def argmax(pairs):
+    """Returns argmax by ar val pairs"""
+    return max(pairs, key=itemgetter(1))[0]
+
+def argmax_f(X, f):
+    """Argmax in the classical sense, finite args"""
+    return argmax((x, f(x)) for x in X)
+
